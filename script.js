@@ -1,165 +1,130 @@
-// ⚠️ CONFIGURACIÓN: Cambia este enlace por el de tu formulario de Google
-const ENLACE_FORMULARIO = 'https://docs.google.com/forms/d/e/1FAIpQLSf8ee65OD9BVuRDh-WKe4DUEITmzkI-6BPQy_2Bf42fKezCHQ/viewform ';
+// ⚠️ CONFIGURACIÓN - TU ENLACE DEL FORMULARIO DE GOOGLE
+const ENLACE_FORMULARIO = 'https://docs.google.com/forms/d/e/1FAIpQLSf8ee65OD9BVuRDh-WKe4DUEITmzkI-6BPQy_2Bf42fKezCHQ/viewform';
 
-// Variables de estado
+// 🧪 MODO PRUEBA: true = cortes cada 2 minutos | false = cortes en :29 y :59
+const MODO_PRUEBA = true;
+
 let formularioAbierto = false;
 let ventanaFormulario = null;
+let botonMostrado = false;
 
-// ========== SERVICE WORKER ==========
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js')
-            .then(registration => {
-                console.log('✅ Service Worker registrado correctamente');
-                
-                // Escuchar mensajes del Service Worker
-                navigator.serviceWorker.addEventListener('message', event => {
-                    if (event.data.tipo === 'CORTE') {
-                        console.log('🔔 Corte detectado por SW:', event.data.hora);
-                        abrirFormulario();
-                    }
-                });
-            })
-            .catch(error => {
-                console.error('❌ Error al registrar Service Worker:', error);
-            });
-    });
-}
-
-// ========== NOTIFICACIONES ==========
-function solicitarPermisoNotificaciones() {
-    if (!('Notification' in window)) {
-        console.warn('⚠️ Este navegador no soporta notificaciones');
-        return;
+// ========== INICIALIZACIÓN SEGURA ==========
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🕐 Iniciando Reloj de Cortes CDMX');
+    console.log('📝 Formulario:', ENLACE_FORMULARIO);
+    
+    if (MODO_PRUEBA) {
+        console.log('🧪 MODO PRUEBA ACTIVADO - Cortes cada 2 minutos');
+    } else {
+        console.log('⚡ MODO NORMAL - Cortes en minutos :29 y :59');
     }
     
-    if (Notification.permission === 'default') {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                console.log('🔔 Notificaciones permitidas - Recibirás avisos aunque la pantalla esté apagada');
-            } else {
-                console.warn('⚠️ Notificaciones bloqueadas - No recibirás avisos con pantalla apagada');
-            }
-        });
+    iniciarSistema();
+});
+
+// ========== FUNCIÓN PRINCIPAL ==========
+function iniciarSistema() {
+    actualizarReloj();
+    setInterval(actualizarReloj, 1000);
+}
+
+function actualizarReloj() {
+    try {
+        const ahora = new Date();
+        
+        // Obtener hora CDMX
+        const opcionesHora = {
+            timeZone: 'America/Mexico_City',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false
+        };
+        
+        const horaCDMX = new Intl.DateTimeFormat('es-MX', opcionesHora).format(ahora);
+        const partes = horaCDMX.split(':');
+        const horas = partes[0];
+        const minutos = partes[1];
+        const segundos = partes[2];
+        
+        // Actualizar display
+        const relojElement = document.getElementById('reloj');
+        const segundosElement = document.getElementById('segundos');
+        if (relojElement) relojElement.textContent = `${horas}:${minutos}`;
+        if (segundosElement) segundosElement.textContent = segundos;
+        
+        // Actualizar fecha
+        const opcionesFecha = {
+            timeZone: 'America/Mexico_City',
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        };
+        const fechaCDMX = new Intl.DateTimeFormat('es-MX', opcionesFecha).format(ahora);
+        const fechaElement = document.getElementById('fecha');
+        if (fechaElement) fechaElement.textContent = fechaCDMX;
+        
+        // Convertir a números
+        const minutosNum = parseInt(minutos);
+        const segundosNum = parseInt(segundos);
+        
+        // Actualizar contador
+        actualizarContador(minutosNum, segundosNum);
+        
+        // Verificar si es minuto de corte
+        verificarCorte(minutosNum, segundosNum);
+        
+    } catch (error) {
+        console.error('Error en actualizarReloj:', error);
     }
 }
 
-// ========== FUNCIONES PRINCIPALES ==========
-function abrirFormulario() {
-    // Si ya hay una ventana abierta, la cerramos
-    if (ventanaFormulario && !ventanaFormulario.closed) {
-        ventanaFormulario.close();
-    }
+function actualizarContador(minutosActuales, segundosActuales) {
+    const elementoTiempoRestante = document.getElementById('tiempo-restante');
+    const elementoContador = document.getElementById('contador');
     
-    // Abrir formulario en nueva ventana
-    ventanaFormulario = window.open(
-        ENLACE_FORMULARIO, 
-        'FormularioCorte', 
-        'width=800,height=900,scrollbars=yes,resizable=yes'
-    );
+    if (!elementoTiempoRestante || !elementoContador) return;
     
-    formularioAbierto = true;
-    console.log('📝 Formulario abierto a las', new Date().toLocaleTimeString());
-}
-
-function calcularTiempoRestante(minutosActuales, segundosActuales) {
     let minutosHastaCorte;
     
-    if (minutosActuales < 29) {
-        minutosHastaCorte = 29 - minutosActuales;
-    } else if (minutosActuales < 59) {
-        minutosHastaCorte = 59 - minutosActuales;
+    if (MODO_PRUEBA) {
+        // Próximo múltiplo de 2
+        let proximoPar;
+        if (minutosActuales % 2 === 0 && segundosActuales === 0) {
+            proximoPar = minutosActuales + 2;
+        } else {
+            proximoPar = Math.ceil(minutosActuales / 2) * 2;
+            if (proximoPar === minutosActuales && segundosActuales > 0) {
+                proximoPar += 2;
+            }
+        }
+        
+        if (proximoPar >= 60) {
+            minutosHastaCorte = 60 - minutosActuales + (proximoPar - 60);
+        } else {
+            minutosHastaCorte = proximoPar - minutosActuales;
+        }
     } else {
-        minutosHastaCorte = 60 - minutosActuales + 29;
+        // Modo normal: :29 y :59
+        if (minutosActuales < 29) {
+            minutosHastaCorte = 29 - minutosActuales;
+        } else if (minutosActuales < 59) {
+            minutosHastaCorte = 59 - minutosActuales;
+        } else {
+            minutosHastaCorte = 60 - minutosActuales + 29;
+        }
     }
     
     const segundosHastaCorte = (minutosHastaCorte * 60) - segundosActuales;
     const minutosRestantes = Math.floor(segundosHastaCorte / 60);
     const segundosRestantes = segundosHastaCorte % 60;
     
-    return { minutos: minutosRestantes, segundos: segundosRestantes };
-}
-
-function actualizarReloj() {
-    // Obtener la hora actual de Ciudad de México
-    const ahora = new Date();
-    const opcionesHora = {
-        timeZone: 'America/Mexico_City',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false
-    };
-    
-    const horaCDMX = new Intl.DateTimeFormat('es-MX', opcionesHora).format(ahora);
-    const [horas, minutos, segundos] = horaCDMX.split(':');
-    
-    // Actualizar el reloj principal
-    document.getElementById('reloj').textContent = `${horas}:${minutos}`;
-    document.getElementById('segundos').textContent = segundos;
-    
-    // Actualizar la fecha
-    const opcionesFecha = {
-        timeZone: 'America/Mexico_City',
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    };
-    const fechaCDMX = new Intl.DateTimeFormat('es-MX', opcionesFecha).format(ahora);
-    document.getElementById('fecha').textContent = fechaCDMX;
-    
-    // Convertir a números
-    const minutosActuales = parseInt(minutos);
-    const segundosActuales = parseInt(segundos);
-    
-    // Elementos del DOM
-    const elementoAviso = document.getElementById('aviso');
-    const elementoEstado = document.getElementById('estado');
-    const elementoContador = document.getElementById('contador');
-    const elementoTiempoRestante = document.getElementById('tiempo-restante');
-    
-    // Calcular y mostrar tiempo restante
-    const tiempoRestante = calcularTiempoRestante(minutosActuales, segundosActuales);
     elementoTiempoRestante.textContent = 
-        `${String(tiempoRestante.minutos).padStart(2, '0')}:${String(tiempoRestante.segundos).padStart(2, '0')}`;
+        `${String(minutosRestantes).padStart(2, '0')}:${String(segundosRestantes).padStart(2, '0')}`;
     elementoContador.style.display = 'block';
     
-    // Calcular segundos totales hasta el próximo corte
-    const segundosHastaCorte = (tiempoRestante.minutos * 60) + tiempoRestante.segundos;
-    
-    // LÓGICA PRINCIPAL: Detectar el minuto 29 y 59
-    const esMinutoDeCorte = (minutosActuales === 29 || minutosActuales === 59);
-    
-    if (esMinutoDeCorte) {
-        // Durante TODO el minuto 29 y 59 (60 segundos)
-        elementoAviso.style.display = 'block';
-        elementoEstado.textContent = '🔴 ¡CORTE ACTIVO - Rellena el formulario!';
-        elementoEstado.className = 'estado alerta-activa';
-        
-        // Abrir el formulario SOLO en el primer segundo del minuto de corte
-        if (segundosActuales === 0 && !formularioAbierto) {
-            abrirFormulario();
-        }
-        
-        // Reiniciar el flag cuando empiece el siguiente segundo
-        if (segundosActuales === 1) {
-            formularioAbierto = false;
-        }
-    } else {
-        // Fuera del minuto de corte
-        elementoAviso.style.display = 'none';
-        elementoEstado.textContent = '✅ Monitoreando - Esperando próximo corte';
-        elementoEstado.className = 'estado';
-        formularioAbierto = false;
-        
-        // Cerrar ventana del formulario si está abierta
-        if (ventanaFormulario && !ventanaFormulario.closed) {
-            ventanaFormulario.close();
-        }
-    }
-    
-    // Cambiar color del contador cuando falta poco
+    // Color del contador
     if (segundosHastaCorte <= 60) {
         elementoContador.style.color = '#ff3b3b';
         elementoTiempoRestante.style.color = '#ffd700';
@@ -169,23 +134,95 @@ function actualizarReloj() {
     }
 }
 
-// ========== INICIALIZACIÓN ==========
-function iniciarSistema() {
-    // Actualizar cada segundo
-    setInterval(actualizarReloj, 1000);
+function verificarCorte(minutosActuales, segundosActuales) {
+    let esMinutoDeCorte;
     
-    // Primera actualización inmediata
-    actualizarReloj();
+    if (MODO_PRUEBA) {
+        esMinutoDeCorte = (minutosActuales % 2 === 0);
+    } else {
+        esMinutoDeCorte = (minutosActuales === 29 || minutosActuales === 59);
+    }
     
-    // Solicitar permiso de notificaciones
-    solicitarPermisoNotificaciones();
+    const elementoAviso = document.getElementById('aviso');
+    const elementoEstado = document.getElementById('estado');
+    const elementoModoPrueba = document.getElementById('modo-prueba');
     
-    console.log('🕐 Sistema de Reloj de Cortes - CDMX');
-    console.log('✅ Sistema activado correctamente');
-    console.log('⏰ Se abrirá el formulario en los minutos 29 y 59 de cada hora');
-    console.log('📝 Formulario configurado:', ENLACE_FORMULARIO);
-    console.log('💡 El sistema funciona aunque la pantalla esté apagada');
+    if (esMinutoDeCorte) {
+        if (elementoAviso) elementoAviso.style.display = 'block';
+        if (elementoEstado) {
+            elementoEstado.textContent = '🔴 ¡CORTE ACTIVO - Abre el formulario!';
+            elementoEstado.className = 'estado alerta-activa';
+        }
+        
+        // Activar en el segundo 0
+        if (segundosActuales === 0 && !formularioAbierto) {
+            activarModoCorte();
+        }
+        
+        if (segundosActuales === 1) {
+            formularioAbierto = false;
+        }
+    } else {
+        if (elementoAviso) elementoAviso.style.display = 'none';
+        if (elementoEstado) {
+            if (MODO_PRUEBA) {
+                elementoEstado.textContent = '🧪 Modo prueba - Cortes cada 2 minutos';
+            } else {
+                elementoEstado.textContent = '✅ Monitoreando - Esperando próximo corte';
+            }
+            elementoEstado.className = 'estado';
+        }
+        
+        formularioAbierto = false;
+        ocultarBotonFormulario();
+    }
+    
+    // Mostrar/ocultar indicador modo prueba
+    if (elementoModoPrueba) {
+        elementoModoPrueba.style.display = MODO_PRUEBA ? 'block' : 'none';
+    }
 }
 
-// Iniciar cuando el DOM esté completamente cargado
-document.addEventListener('DOMContentLoaded', iniciarSistema);
+// ========== FUNCIONES DEL FORMULARIO ==========
+function activarModoCorte() {
+    console.log('🔔 Activando modo corte');
+    mostrarBotonFormulario();
+    
+    // Intentar abrir automáticamente
+    try {
+        ventanaFormulario = window.open(
+            ENLACE_FORMULARIO, 
+            '_blank',
+            'width=800,height=900,scrollbars=yes,resizable=yes'
+        );
+        
+        if (ventanaFormulario) {
+            console.log('✅ Formulario abierto automáticamente');
+            formularioAbierto = true;
+        } else {
+            console.log('⚠️ No se pudo abrir automáticamente, usa el botón');
+        }
+    } catch (error) {
+        console.log('🔴 El navegador bloqueó la apertura automática');
+        console.log('💡 Haz clic en el botón para abrir el formulario');
+    }
+}
+
+function mostrarBotonFormulario() {
+    if (botonMostrado) return;
+    
+    const botonContainer = document.getElementById('boton-formulario');
+    if (botonContainer) {
+        botonContainer.style.display = 'block';
+        botonMostrado = true;
+        console.log('🔘 Botón de formulario mostrado');
+    }
+}
+
+function ocultarBotonFormulario() {
+    const botonContainer = document.getElementById('boton-formulario');
+    if (botonContainer) {
+        botonContainer.style.display = 'none';
+        botonMostrado = false;
+    }
+}
