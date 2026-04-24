@@ -1,0 +1,155 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #0a0a0a;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Arial', sans-serif;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+}
+
+.reloj-container {
+    background: linear-gradient(145deg, #1a1a2e, #16213e);
+    padding: 50px 70px;
+    border-radius: 30px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.7), 
+                0 0 60px rgba(231, 76, 60, 0.4);
+    border: 3px solid #e74c3c;
+    position: relative;
+    overflow: hidden;
+}
+
+.reloj-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: conic-gradient(from 0deg, transparent, rgba(231, 76, 60, 0.1), transparent);
+    animation: rotar 4s linear infinite;
+}
+
+@keyframes rotar {
+    100% { transform: rotate(360deg); }
+}
+
+#reloj {
+    font-size: 130px;
+    font-weight: bold;
+    color: #ff3b3b;
+    text-shadow: 0 0 30px rgba(255, 59, 59, 0.9),
+                 0 0 60px rgba(255, 59, 59, 0.6),
+                 0 0 90px rgba(255, 59, 59, 0.3);
+    letter-spacing: 10px;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+#segundos {
+    font-size: 40px;
+    color: #ff6b6b;
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    margin-top: 10px;
+}
+
+#aviso {
+    font-size: 45px;
+    font-weight: bold;
+    color: #ffd700;
+    text-shadow: 0 0 30px rgba(255, 215, 0, 0.8),
+                 0 0 60px rgba(255, 215, 0, 0.5);
+    animation: latido 0.5s infinite;
+    text-align: center;
+    background: rgba(255, 0, 0, 0.2);
+    padding: 20px 40px;
+    border-radius: 20px;
+    border: 3px solid #ffd700;
+    display: none;
+}
+
+@keyframes latido {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+.aviso-subtitulo {
+    font-size: 24px;
+}
+
+.info {
+    color: #ffffff;
+    font-size: 18px;
+    text-align: center;
+    opacity: 0.8;
+}
+
+.zona {
+    color: #e74c3c;
+    font-size: 24px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+.estado {
+    color: #2ecc71;
+    font-size: 16px;
+    margin-top: 5px;
+}
+
+.alerta-activa {
+    color: #ffd700 !important;
+    animation: latido 0.5s infinite;
+}
+
+.contador {
+    font-size: 24px;
+    color: #ffd700;
+    margin-top: 15px;
+    display: none;
+    text-align: center;
+}
+
+.contador span {
+    font-size: 48px;
+    font-weight: bold;
+    color: #ff3b3b;
+}
+
+/* Responsive para pantallas pequeñas */
+@media (max-width: 768px) {
+    #reloj {
+        font-size: 80px;
+    }
+    
+    #segundos {
+        font-size: 30px;
+    }
+    
+    #aviso {
+        font-size: 30px;
+    }
+    
+    .contador {
+        font-size: 18px;
+    }
+    
+    .contador span {
+        font-size: 36px;
+    }
+}
