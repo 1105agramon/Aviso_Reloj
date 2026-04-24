@@ -1,5 +1,5 @@
 // ⚠️ CONFIGURACIÓN: Cambia este enlace por el de tu formulario de Google
-const ENLACE_FORMULARIO = 'https://docs.google.com/forms/d/e/TU-ID-AQUI/viewform';
+const ENLACE_FORMULARIO = 'https://docs.google.com/forms/d/e/1FAIpQLSf8ee65OD9BVuRDh-WKe4DUEITmzkI-6BPQy_2Bf42fKezCHQ/viewform';
 
 // Variables de estado
 let formularioAbierto = false;
