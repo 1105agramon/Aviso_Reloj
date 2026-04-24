@@ -2,7 +2,7 @@
 const ENLACE_FORMULARIO = 'https://docs.google.com/forms/d/e/1FAIpQLSf8ee65OD9BVuRDh-WKe4DUEITmzkI-6BPQy_2Bf42fKezCHQ/viewform';
 
 // 🧪 MODO PRUEBA: true = cortes cada 2 minutos | false = cortes en :29 y :59
-const MODO_PRUEBA = true;
+const MODO_PRUEBA = false;
 
 let formularioAbierto = false;
 let ventanaFormulario = null;
