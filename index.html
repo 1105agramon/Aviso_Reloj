@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reloj CDMX - Aviso de Corte</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
     <div class="reloj-container">
@@ -25,6 +27,11 @@
         <div class="zona">🇲🇽 Ciudad de México (GMT-6)</div>
         <div id="fecha"></div>
         <div class="estado" id="estado">Monitoreando cortes...</div>
+    </div>
+
+    <div class="instrucciones">
+        💡 <strong>Importante:</strong> La primera vez que aparezca una notificación, 
+        haz clic en "Permitir" para recibir los avisos de corte.
     </div>
 
     <script src="script.js"></script>

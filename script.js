@@ -1,15 +1,52 @@
 // ⚠️ CONFIGURACIÓN: Cambia este enlace por el de tu formulario de Google
-const ENLACE_FORMULARIO = 'https://docs.google.com/forms/d/e/1FAIpQLSf8ee65OD9BVuRDh-WKe4DUEITmzkI-6BPQy_2Bf42fKezCHQ/viewform';
+const ENLACE_FORMULARIO = 'https://docs.google.com/forms/d/e/1FAIpQLSf8ee65OD9BVuRDh-WKe4DUEITmzkI-6BPQy_2Bf42fKezCHQ/viewform ';
 
 // Variables de estado
 let formularioAbierto = false;
 let ventanaFormulario = null;
 
-/**
- * Abre el formulario de Google en una nueva ventana
- */
+// ========== SERVICE WORKER ==========
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+            .then(registration => {
+                console.log('✅ Service Worker registrado correctamente');
+                
+                // Escuchar mensajes del Service Worker
+                navigator.serviceWorker.addEventListener('message', event => {
+                    if (event.data.tipo === 'CORTE') {
+                        console.log('🔔 Corte detectado por SW:', event.data.hora);
+                        abrirFormulario();
+                    }
+                });
+            })
+            .catch(error => {
+                console.error('❌ Error al registrar Service Worker:', error);
+            });
+    });
+}
+
+// ========== NOTIFICACIONES ==========
+function solicitarPermisoNotificaciones() {
+    if (!('Notification' in window)) {
+        console.warn('⚠️ Este navegador no soporta notificaciones');
+        return;
+    }
+    
+    if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                console.log('🔔 Notificaciones permitidas - Recibirás avisos aunque la pantalla esté apagada');
+            } else {
+                console.warn('⚠️ Notificaciones bloqueadas - No recibirás avisos con pantalla apagada');
+            }
+        });
+    }
+}
+
+// ========== FUNCIONES PRINCIPALES ==========
 function abrirFormulario() {
-    // Si ya hay una ventana abierta del formulario, la cerramos primero
+    // Si ya hay una ventana abierta, la cerramos
     if (ventanaFormulario && !ventanaFormulario.closed) {
         ventanaFormulario.close();
     }
@@ -22,14 +59,9 @@ function abrirFormulario() {
     );
     
     formularioAbierto = true;
+    console.log('📝 Formulario abierto a las', new Date().toLocaleTimeString());
 }
 
-/**
- * Calcula el tiempo restante hasta el próximo corte
- * @param {number} minutosActuales - Minutos actuales
- * @param {number} segundosActuales - Segundos actuales
- * @returns {Object} Objeto con minutos y segundos restantes
- */
 function calcularTiempoRestante(minutosActuales, segundosActuales) {
     let minutosHastaCorte;
     
@@ -48,9 +80,6 @@ function calcularTiempoRestante(minutosActuales, segundosActuales) {
     return { minutos: minutosRestantes, segundos: segundosRestantes };
 }
 
-/**
- * Actualiza el reloj y gestiona los avisos de corte
- */
 function actualizarReloj() {
     // Obtener la hora actual de Ciudad de México
     const ahora = new Date();
@@ -113,7 +142,7 @@ function actualizarReloj() {
             abrirFormulario();
         }
         
-        // Reiniciar el flag cuando cambie el minuto
+        // Reiniciar el flag cuando empiece el siguiente segundo
         if (segundosActuales === 1) {
             formularioAbierto = false;
         }
@@ -140,7 +169,7 @@ function actualizarReloj() {
     }
 }
 
-// Iniciar el sistema
+// ========== INICIALIZACIÓN ==========
 function iniciarSistema() {
     // Actualizar cada segundo
     setInterval(actualizarReloj, 1000);
@@ -148,12 +177,14 @@ function iniciarSistema() {
     // Primera actualización inmediata
     actualizarReloj();
     
-    // Mensaje de confirmación en consola
+    // Solicitar permiso de notificaciones
+    solicitarPermisoNotificaciones();
+    
     console.log('🕐 Sistema de Reloj de Cortes - CDMX');
     console.log('✅ Sistema activado correctamente');
-    console.log('⏰ Se abrirá el formulario en los minutos 29 y 59');
+    console.log('⏰ Se abrirá el formulario en los minutos 29 y 59 de cada hora');
     console.log('📝 Formulario configurado:', ENLACE_FORMULARIO);
-    console.log('💡 Recuerda permitir ventanas emergentes en tu navegador');
+    console.log('💡 El sistema funciona aunque la pantalla esté apagada');
 }
 
 // Iniciar cuando el DOM esté completamente cargado

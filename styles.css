@@ -131,25 +131,43 @@ body {
     color: #ff3b3b;
 }
 
+.instrucciones {
+    color: #ffffff;
+    font-size: 14px;
+    text-align: center;
+    opacity: 0.6;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-radius: 10px;
+    max-width: 600px;
+    margin-top: 20px;
+}
+
 /* Responsive para pantallas pequeñas */
 @media (max-width: 768px) {
     #reloj {
-        font-size: 80px;
+        font-size: 60px;
+        letter-spacing: 5px;
     }
     
     #segundos {
-        font-size: 30px;
+        font-size: 25px;
     }
     
     #aviso {
-        font-size: 30px;
+        font-size: 25px;
+        padding: 15px 25px;
     }
     
     .contador {
-        font-size: 18px;
+        font-size: 16px;
     }
     
     .contador span {
-        font-size: 36px;
+        font-size: 28px;
+    }
+    
+    .reloj-container {
+        padding: 30px 40px;
     }
 }
